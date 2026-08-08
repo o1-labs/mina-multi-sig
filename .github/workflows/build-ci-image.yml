@@ -33,7 +33,7 @@ jobs:
 
       # Authenticate with GitHub Container Registry using the built-in token
       - name: Log in to Container Registry
-        uses: docker/login-action@v3
+        uses: docker/login-action@v4
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
