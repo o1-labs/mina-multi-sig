@@ -52,7 +52,7 @@ jobs:
 
       # Set up Docker Buildx for advanced building features (caching, multi-platform)
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
 
       # Build the Docker image with FROST dependencies and push to registry
       - name: Build and push Docker image
