@@ -34,11 +34,13 @@ Additionally, view the [transaction generation document](O1JS-WORKFLOW.md) for e
 
 ### mina-frost-client
 
-To install `mina-frost-client` run
+To install `mina-frost-client` for a network that runs the Mesa hard fork, as Mainnet does, run
 
 ```bash
-cargo install --git https://github.com/Raspberry-Devs/mina-multi-sig.git --locked mina-frost-client
+cargo install --git https://github.com/Raspberry-Devs/mina-multi-sig.git --locked mina-frost-client --features mesa-hardfork
 ```
+
+Without `--features mesa-hardfork` the client follows the transaction rules from before Mesa (8 app state fields, transaction version 3). Such a build cannot read a zkApp transaction made for a Mesa network, and a Mesa build cannot read one made for an earlier network. Config files and key shares are the same for both builds.
 
 ### frost-bluepallas
 
@@ -74,8 +76,8 @@ cargo run --bin mina-frost-client -- init -c eve.toml
 cargo run --bin mina-frost-client -- trusted-dealer \
   -d "Alice, Bob and Eve's group" \
   --names Alice,Bob,Eve \
-  -c alice.toml -c bob.toml -c eve.toml \
-  -C bluepallas
+  --threshold 2 \
+  -c alice.toml -c bob.toml -c eve.toml
 ```
 
 ### Running the Server
