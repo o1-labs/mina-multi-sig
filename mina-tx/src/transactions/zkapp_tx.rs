@@ -33,6 +33,30 @@ pub mod test_vectors;
 /// Compile-time flag indicating whether this build uses Mesa hardfork transaction semantics.
 pub const IS_MESA_HARDFORK: bool = cfg!(feature = "mesa-hardfork");
 
+/// Explains the usual reason a zkApp command does not parse: an app state of the other
+/// transaction version (8 fields before the Mesa hard fork, 32 from it on).
+///
+/// `json` is a zkApp command, or the signed output of an earlier session that wraps one.
+/// Returns `None` when it holds no app state, or one of the length this build expects.
+pub(crate) fn app_state_length_hint(json: &str) -> Option<String> {
+    let value: serde_json::Value = serde_json::from_str(json).ok()?;
+    let found = value
+        .get("accountUpdates")
+        .or_else(|| value.pointer("/payload/kind/transaction/accountUpdates"))?
+        .as_array()?
+        .iter()
+        .find_map(|update| update.pointer("/body/update/appState")?.as_array())?
+        .len();
+    if found == APP_STATE_LENGTH {
+        return None;
+    }
+    Some(alloc::format!(
+        "the transaction has {found} appState entries and this build expects {APP_STATE_LENGTH}. \
+         A network that runs the Mesa hard fork uses 32 and needs a build with the \
+         `mesa-hardfork` feature; an earlier network uses 8 and needs a build without it."
+    ))
+}
+
 // Re-export signature injection types for convenience
 pub use signature_injection::{SignatureInjectionResult, SignatureInjectionWarning};
 
