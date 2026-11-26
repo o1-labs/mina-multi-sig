@@ -110,11 +110,18 @@ impl TransactionEnvelope {
             Err(e) => e,
         };
 
+        // serde only reports where the app state stops matching ("trailing characters"), so
+        // say it when the command was made for the other transaction version.
+        let hint = zkapp_tx::app_state_length_hint(s)
+            .map(|hint| alloc::format!("\n  Hint: {hint}"))
+            .unwrap_or_default();
+
         Err(MinaTxError::UnknownTransactionType(
             alloc::format!(
-                "Unable to parse transaction as ZkApp or Legacy.\n  ZkApp parse error: {}\n  Legacy parse error: {}",
+                "Unable to parse transaction as ZkApp or Legacy.\n  ZkApp parse error: {}\n  Legacy parse error: {}{}",
                 zkapp_err,
-                legacy_err
+                legacy_err,
+                hint
             )
         ))
     }
@@ -404,5 +411,56 @@ mod tests {
             NetworkIdEnvelope::from(NetworkId::Testnet),
         );
         assert!(result.is_err());
+    }
+
+    /// A zkApp command made for the other transaction version does not parse. The error must
+    /// say why, not only where serde stopped.
+    #[test]
+    fn test_from_str_network_names_the_app_state_length() {
+        // Commands from before Mesa for a Mesa build, commands made after Mesa otherwise:
+        // a bare one, then the signed output of an earlier session.
+        #[cfg(feature = "mesa-hardfork")]
+        let (commands, found) = (
+            [
+                include_str!("../tests/data/payment-zkapp.json"),
+                include_str!("../tests/data/graphql/zkapp_signed.json"),
+            ],
+            8,
+        );
+        #[cfg(not(feature = "mesa-hardfork"))]
+        let (commands, found) = (
+            [
+                include_str!("../tests/data/mainnet/zkapp-575805.json"),
+                include_str!("../tests/data/graphql/zkapp_signed_mesa.json"),
+            ],
+            32,
+        );
+
+        for json in commands {
+            let error = TransactionEnvelope::from_str_network(
+                json,
+                NetworkIdEnvelope::from(NetworkId::Mainnet),
+            )
+            .expect_err("a command of the other transaction version must not parse");
+            let message = error.to_string();
+
+            assert!(
+                message.contains(&alloc::format!(
+                    "the transaction has {found} appState entries"
+                )),
+                "{message}"
+            );
+            assert!(message.contains("mesa-hardfork"), "{message}");
+        }
+    }
+
+    #[test]
+    fn test_from_str_network_gives_no_hint_without_an_app_state() {
+        let error = TransactionEnvelope::from_str_network(
+            r#"{"unknown": "field"}"#,
+            NetworkIdEnvelope::from(NetworkId::Testnet),
+        )
+        .expect_err("not a transaction");
+        assert!(!error.to_string().contains("Hint"), "{error}");
     }
 }

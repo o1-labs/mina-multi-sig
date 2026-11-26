@@ -32,7 +32,7 @@ This guide walks you through signing Mina transactions using FROST threshold sig
 | Software | Version | Install Command |
 |----------|---------|-----------------|
 | Rust | 1.87.0+ | See [the Rust book](https://doc.rust-lang.org/book/ch01-01-installation.html) |
-| mina-frost-client | latest | `cargo install --git https://github.com/Raspberry-Devs/mina-multi-sig.git --locked mina-frost-client` |
+| mina-frost-client | latest | `cargo install --git https://github.com/Raspberry-Devs/mina-multi-sig.git --locked mina-frost-client --features mesa-hardfork` (leave the feature out for a network that does not run the Mesa hard fork) |
 | frostd | latest | `cargo install --git https://github.com/ZcashFoundation/frost-zcash-demo.git --locked frostd` |
 | mkcert | latest | `apt install mkcert` |
 
@@ -43,8 +43,9 @@ This guide walks you through signing Mina transactions using FROST threshold sig
 ### 1.1 Install Tools
 
 ```bash
-# Install mina-frost-client
-cargo install --git https://github.com/Raspberry-Devs/mina-multi-sig.git --locked mina-frost-client
+# Install mina-frost-client with the transaction rules of the Mesa hard fork, which Mainnet runs.
+# Leave `--features mesa-hardfork` out for a network that does not run Mesa.
+cargo install --git https://github.com/Raspberry-Devs/mina-multi-sig.git --locked mina-frost-client --features mesa-hardfork
 
 # Install frostd server
 cargo install --git https://github.com/ZcashFoundation/frost-zcash-demo.git --locked frostd
